@@ -5,12 +5,22 @@ body {
 }
 
 .clock {
-    display: inline-block;
-    width: 50vw;
+    display: flex;
+    align-items: center;
+    width: 49.5vw;
     height: 100vh;
-    float: left
+    float: left;
 }
 
-.clock:first-child {
-    background: green;
+.clock .value {
+    margin: auto;
+    font-size: 12vw;
+}
+
+.clock.last {
+    border-left: 3px solid #FFF;
+}
+
+.clock.stop {
+    background: #DDD;
 }
