@@ -74,9 +74,10 @@ $(document).ready(function() {
             $('.clock .value').text('05:00');
         }
         WS.create(function(url) {
-            var $url = $('.url');
+            var $url = $('.url a');
+            $url.attr('href', url);
             $url.text(url);
-            $url.addClass('displayed');
+            $url.parent().addClass('displayed');
             $('body .main').removeClass('init');
             $('.create-game').addClass('submitted');
         });
