@@ -1,4 +1,30 @@
+window.scrollTo(0,1);
+
 var timers = {
+};
+
+var WS = {
+    endpoint: 'http://turkotron.lichess.org',
+    create: function(callback) {
+        return $.ajax({
+            url: this.endpoint + '/clock/create',
+            type: 'POST',
+            success: callback
+        });
+    },
+    switch: function(callback) {
+        $.ajax({
+            url: this.endpoint + '/clock/switch',
+            type: 'POST',
+            success: callback
+        });
+    },
+    finish: function(callback) {
+        // return $.ajax({
+        //     url: this.endpoint + '/clock/finish',
+        //     type: 'POST'
+        // });
+    }
 };
 
 function Timer(onTick, onComplete) {
@@ -37,11 +63,23 @@ function pauseOtherTimer(id) {
 
 $(document).ready(function() {
 
-    $('.clock').on('touchstart', function() {
-        navigator.vibrate(1000);
+    $('body').on('tap click', '.init .create-game button', function() {
+        var time = $(this).siblings('input').val();
+        if(time.trim()) {
+            $('.clock .value').text(time);
+        } else {
+            $('.clock .value').text('05:00');
+        }
+        WS.create(function(url) {
+            var $url = $('.url');
+            $url.text(url);
+            $url.addClass('displayed');
+            $('body').removeClass('init');
+            $('.create-game').addClass('submitted');
+        });
     });
 
-    $('.clock').on('tap click', function() {
+    $('body').on('tap click', '.clock', function() {
         var $clock = $(this);
         var $value = $clock.find('.value');
         var timerId = $clock.data('timer') || Date.now();
@@ -55,6 +93,7 @@ $(document).ready(function() {
                     $value.text(timeString);
                 },
                 function onComplete() {
+                    WS.finish();
                 }
             );
             $clock.data('timer', timerId);
@@ -74,5 +113,7 @@ $(document).ready(function() {
                 timer.stop();
             }
         }
+
+        WS.switch();
     });
 });
