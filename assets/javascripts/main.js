@@ -27,6 +27,27 @@ var WS = {
     }
 };
 
+function getTimer($clock) {
+    var timerId = $clock.data('timer') || Date.now();
+    var timer = timers[timerId];
+    if(!timer) {
+        timer =  Timer(
+            function onTick() {
+                var x = timer.msToTime(timer.lap());
+                var timeString = x.substring(0, x.length - 4);
+                var $value = $clock.find('.value');
+                $value.text(timeString);
+            },
+            function onComplete() {
+                WS.finish();
+            }
+        );
+        $clock.data('timer', timerId);
+        timers[timerId] = timer;
+    }
+    return timer;
+}
+
 function Timer(onTick, onComplete) {
     return new Tock({
         countdown: true,
@@ -43,27 +64,9 @@ function parseTime(time) {
     return (m * 60 * 1000) + (s * 1000);
 }
 
-function startOtherTimer(id) {
-    Object.keys(timers).filter(function(key) {
-        if(key != id) {
-            $('.clock[data-timer="' + key + '"]').removeClass('stop');
-            timers[key].start();
-        }
-    });
-}
-
-function pauseOtherTimer(id) {
-    Object.keys(timers).filter(function(key) {
-        if(key != id) {
-            $('.clock[data-timer="' + key + '"]').addClass('stop');
-            timers[key].pause();
-        }
-    });
-}
-
 $(document).ready(function() {
 
-    $('body').on('tap click', '.init .create-game button', function() {
+    $('body').on('click', '.main.init .create-game button', function() {
         var time = $(this).siblings('input').val();
         if(time.trim()) {
             $('.clock .value').text(time);
@@ -74,45 +77,30 @@ $(document).ready(function() {
             var $url = $('.url');
             $url.text(url);
             $url.addClass('displayed');
-            $('body').removeClass('init');
+            $('body .main').removeClass('init');
             $('.create-game').addClass('submitted');
         });
     });
 
-    $('body').on('tap click', '.clock', function() {
-        var $clock = $(this);
-        var $value = $clock.find('.value');
-        var timerId = $clock.data('timer') || Date.now();
-        var timer = timers[timerId];
+    $('body').on('click', '.main:not(.init) .clock', function() {
 
-        if(!timer) {
-            timer =  Timer(
-                function onTick() {
-                    var x = timer.msToTime(timer.lap());
-                    var timeString = x.substring(0, x.length - 4);
-                    $value.text(timeString);
-                },
-                function onComplete() {
-                    WS.finish();
-                }
-            );
-            $clock.data('timer', timerId);
-            timers[timerId] = timer;
+        if($('.clock.stop').length == 2) {
+            $(this).siblings('.clock').removeClass('stop');
         }
 
-        if($clock.is('.stop')) {
-            window.setTimeout(function() {
-                timer.start(parseTime($value.text()));
-            }, 200);
-            pauseOtherTimer(timerId);
-            $clock.removeClass('stop');
-        } else {
-            if(!$clock.siblings('.clock').is('.stop')) {
-                $clock.addClass('stop');
-                startOtherTimer(timerId);
-                timer.stop();
-            }
-        }
+        var $clockToStart = $('.clock.stop');
+        var $clockToStop = $('.clock:not(.stop)');
+
+        (function() {
+            var $value = $clockToStart.find('.value');
+            var timerToStart = getTimer($clockToStart).start(parseTime($value.text()));
+            $clockToStart.removeClass('stop');
+        })();
+
+        (function() {
+            var timerToStop = getTimer($clockToStop).pause();
+            $clockToStop.addClass('stop');
+        })();
 
         WS.switch();
     });
